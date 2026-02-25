@@ -1,0 +1,18 @@
+[Unit]
+Description=SparkyFitness Barcode Scanner
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/pi/barcode-scanner
+EnvironmentFile=/home/pi/barcode-scanner/.env
+ExecStart=/home/pi/barcode-scanner/.venv/bin/python3 /home/pi/barcode-scanner/barcode_scanner_v2.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
