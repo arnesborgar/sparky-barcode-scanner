@@ -142,6 +142,89 @@ USDA_NUTRIENT_MAP = {
     1089: "iron",
 }
 
+# USDA nutrient name fragments -> custom_nutrients key
+USDA_CUSTOM_NAME_MAP = {
+    # Vitamins
+    "vitamin d": "vitamin_d",
+    "vitamin e": "vitamin_e",
+    "vitamin k": "vitamin_k",
+    "thiamin": "vitamin_b1",
+    "thiamine": "vitamin_b1",
+    "riboflavin": "vitamin_b2",
+    "niacin": "vitamin_b3",
+    "pantothenic": "vitamin_b5",
+    "vitamin b-6": "vitamin_b6",
+    "vitamin b6": "vitamin_b6",
+    "pyridoxine": "vitamin_b6",
+    "biotin": "vitamin_b7",
+    "folate": "vitamin_b9",
+    "folic acid": "vitamin_b9",
+    "vitamin b-12": "vitamin_b12",
+    "vitamin b12": "vitamin_b12",
+    "cobalamin": "vitamin_b12",
+
+    # Minerals
+    "magnesium": "magnesium",
+    "phosphorus": "phosphorus",
+    "zinc": "zinc",
+    "copper": "copper",
+    "manganese": "manganese",
+    "selenium": "selenium",
+    "chromium": "chromium",
+    "molybdenum": "molybdenum",
+    "iodine": "iodine",
+
+    # Carotenoids / antioxidants
+    "beta-carotene": "beta_carotene",
+    "beta carotene": "beta_carotene",
+    "alpha-carotene": "alpha_carotene",
+    "alpha carotene": "alpha_carotene",
+    "lycopene": "lycopene",
+    "lutein": "lutein_zeaxanthin",
+    "zeaxanthin": "lutein_zeaxanthin",
+
+    # Fatty acids
+    "alpha-linolenic": "omega_3_ala",
+    "alpha linolenic": "omega_3_ala",
+    "18:3 n-3": "omega_3_ala",
+    "eicosapentaenoic": "omega_3_epa",
+    "epa": "omega_3_epa",
+    "20:5 n-3": "omega_3_epa",
+    "docosahexaenoic": "omega_3_dha",
+    "dha": "omega_3_dha",
+    "22:6 n-3": "omega_3_dha",
+    "linoleic": "omega_6",
+    "18:2 n-6": "omega_6",
+    "omega-6": "omega_6",
+
+    # Amino acids
+    "histidine": "histidine",
+    "isoleucine": "isoleucine",
+    "leucine": "leucine",
+    "lysine": "lysine",
+    "methionine": "methionine",
+    "cystine": "cysteine",
+    "cysteine": "cysteine",
+    "phenylalanine": "phenylalanine",
+    "tyrosine": "tyrosine",
+    "threonine": "threonine",
+    "tryptophan": "tryptophan",
+    "valine": "valine",
+    "alanine": "alanine",
+    "arginine": "arginine",
+    "aspartic": "aspartic_acid",
+    "glutamic": "glutamic_acid",
+    "glycine": "glycine",
+    "proline": "proline",
+    "serine": "serine",
+
+    # Other compounds
+    "phytosterol": "phytosterols",
+    "oxalic": "oxalate",
+    "oxalate": "oxalate",
+    "caffeine": "caffeine",
+}
+
 # ---------------------------------------------------------------------------
 # API helpers
 # ---------------------------------------------------------------------------
@@ -227,6 +310,8 @@ def lookup_usda(query: str) -> dict | None:
 
 def enrich_from_usda(suggestion: dict, usda_food: dict):
     """Fill in missing nutrients from USDA data (only zero-valued fields)."""
+    suggestion.setdefault("custom_nutrients", {})
+
     for nutrient in usda_food.get("foodNutrients", []):
         nutrient_id = nutrient.get("nutrientId")
         sparky_key = USDA_NUTRIENT_MAP.get(nutrient_id)
@@ -234,6 +319,20 @@ def enrich_from_usda(suggestion: dict, usda_food: dict):
             val = nutrient.get("value")
             if val is not None and float(val) > 0:
                 suggestion[sparky_key] = round(float(val), 2)
+
+        # Extended nutrients go to custom_nutrients by nutrient name matching.
+        nname = (nutrient.get("nutrientName") or "").lower()
+        for fragment, custom_key in USDA_CUSTOM_NAME_MAP.items():
+            if fragment in nname:
+                val = nutrient.get("value")
+                if val is not None and float(val) > 0:
+                    suggestion["custom_nutrients"][custom_key] = round(float(val), 3)
+                break
+
+    # Always provide net_carbs from currently known fields.
+    carbs = float(suggestion.get("carbs", 0) or 0)
+    fiber = float(suggestion.get("dietary_fiber", 0) or 0)
+    suggestion["custom_nutrients"]["net_carbs"] = round(max(carbs - fiber, 0), 2)
 
 
 def create_or_get_food(suggestion: dict) -> tuple[str, str] | tuple[None, None]:

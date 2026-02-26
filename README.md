@@ -11,9 +11,28 @@ USB Scanner → barcode_scanner_v2.py → SparkyFitness API → Food Diary
 **Nutrition lookup pipeline (3-tier fallback):**
 1. **OpenFoodFacts `nutriments`** — declared label values
 2. **OpenFoodFacts `nutriments_estimated`** — computed from ingredients
-3. **USDA FoodData Central** — searched by barcode → brand+name → name
+3. **USDA FoodData Central** — searched by barcode → brand+name → name, and used to populate extended `custom_nutrients` when available
 
 If all sources return zero macros, the food is logged with `[REVIEW]` in the name and `needs_review: true` in `custom_nutrients` for manual correction.
+
+### USDA Extended Nutrient Mapping (stored as `custom_nutrients`)
+
+When USDA fallback is used, Sparky now captures additional nutrients (when present in USDA data) into `custom_nutrients`.
+
+Added custom nutrient keys:
+
+- `net_carbs`
+- Vitamins: `vitamin_d`, `vitamin_e`, `vitamin_k`, `vitamin_b1`, `vitamin_b2`, `vitamin_b3`, `vitamin_b5`, `vitamin_b6`, `vitamin_b7`, `vitamin_b9`, `vitamin_b12`
+- Minerals: `magnesium`, `phosphorus`, `zinc`, `copper`, `manganese`, `selenium`, `chromium`, `molybdenum`, `iodine`
+- Carotenoids / antioxidants: `beta_carotene`, `alpha_carotene`, `lycopene`, `lutein_zeaxanthin`
+- Fatty acids: `omega_3_ala`, `omega_3_epa`, `omega_3_dha`, `omega_6`
+- Amino acids: `histidine`, `isoleucine`, `leucine`, `lysine`, `methionine`, `cysteine`, `phenylalanine`, `tyrosine`, `threonine`, `tryptophan`, `valine`, `alanine`, `arginine`, `aspartic_acid`, `glutamic_acid`, `glycine`, `proline`, `serine`
+- Other compounds: `phytosterols`, `oxalate`, `caffeine`
+
+Notes:
+
+- OpenFoodFacts remains primary; USDA is only used as fallback.
+- Values are stored in USDA-reported units.
 
 **Meal type** is auto-detected by time of day (configurable windows). ALL CAPS names/brands are normalized to Title Case.
 
