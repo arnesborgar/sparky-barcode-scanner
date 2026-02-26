@@ -145,4 +145,4 @@
 ### D-002 GitHub Repo Hygiene and Metadata Updates
 - Completed:
 - Updated About descriptions on requested repositories.
-- Cleaned and validated `jvverd` reference removal on targeted repos where applicable.
+- Cleaned and validated legacy author reference removal on targeted repos where applicable.
